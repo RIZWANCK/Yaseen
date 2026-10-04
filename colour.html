@@ -47,6 +47,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
   animation:grain 1s steps(6) infinite}
 @keyframes grain{20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-4%)}60%{transform:translate(-4%,-2%)}80%{transform:translate(3%,3%)}}
 
+/* ---------- moving backgrounds: his clips, full screen, one per section.
+   Each one arrives with a different editor transition, driven by scroll. ---------- */
+.bgs{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.bgl{position:absolute;inset:0;overflow:hidden;visibility:hidden;will-change:clip-path,transform,opacity;background:var(--ink)}
+.bgl video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.2) brightness(.62)}
+.bgl.soft video{filter:saturate(1.3) brightness(.7) blur(18px);transform:scale(1.15)}
+.bgl.multi video{opacity:0;transition:opacity .9s ease}
+.bgl.multi video.on{opacity:1}
+.bgl::after{content:"";position:absolute;inset:0;background:var(--g,linear-gradient(rgba(14,7,24,.55),rgba(14,7,24,.82)))}
+.fxl{position:fixed;left:50%;top:calc(58px + env(safe-area-inset-top,0px));white-space:nowrap;z-index:55;padding:.55em .9em;border-radius:6px;background:var(--lime);color:var(--ink);opacity:0;transform:translate(-50%,-8px);transition:opacity .25s,transform .35s var(--ease);pointer-events:none}
+.fxl.on{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){.bgs,.fxl{display:none}}
+
 /* ---------- film leader preloader (pure CSS, never blocks the page) ---------- */
 .leader{position:fixed;inset:0;z-index:100;background:var(--ink);display:grid;place-items:center;clip-path:inset(0);animation:leaderOut .7s var(--ease) 1.5s forwards}
 .leader>*{grid-area:1/1}
@@ -323,6 +336,15 @@ dialog button{position:absolute;right:0;top:-44px;padding:.7em 1em;border-radius
 
 <div class="leader" aria-hidden="true"><div class="ring"></div><b>3</b><b>2</b><b>1</b></div>
 <div class="blobs" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="bgs" aria-hidden="true">
+  <div class="bgl" data-for=".hero" data-fx="none" style="--g:linear-gradient(115deg,rgba(104,48,226,.6),rgba(14,7,24,.6) 48%,rgba(255,63,180,.4))"><video src="assets/hero.mp4" muted loop playsinline preload="metadata"></video></div>
+  <div class="bgl soft" data-for=".mq" data-fx="iris" data-name="Iris" style="--g:linear-gradient(rgba(14,7,24,.5),rgba(14,7,24,.78))"><video src="assets/bg-creators-cut.mp4" muted loop playsinline preload="none"></video></div>
+  <div class="bgl multi" data-for="#work" data-fx="wipe" data-name="Linear wipe" style="--g:linear-gradient(rgba(14,7,24,.74),rgba(14,7,24,.5) 45%,rgba(14,7,24,.86))"><video src="assets/bg-varavu.mp4" muted loop playsinline preload="none"></video><video src="assets/bg-pavizham.mp4" muted loop playsinline preload="none"></video><video src="assets/bg-fevicol.mp4" muted loop playsinline preload="none"></video><video src="assets/bg-engagement.mp4" muted loop playsinline preload="none"></video><video src="assets/bg-boutique.mp4" muted loop playsinline preload="none"></video><video src="assets/bg-event.mp4" muted loop playsinline preload="none"></video></div>
+  <div class="bgl" data-for="#about" data-fx="barn" data-name="Barn door" style="--g:linear-gradient(100deg,rgba(14,7,24,.9) 20%,rgba(48,20,110,.62) 70%,rgba(37,224,255,.16))"><video src="assets/bg-varavu.mp4" muted loop playsinline preload="none"></video></div>
+  <div class="bgl" data-for="#services" data-fx="rise" data-name="Push" style="--g:linear-gradient(rgba(14,7,24,.82),rgba(14,7,24,.6) 50%,rgba(255,106,26,.34))"><video src="assets/bg-pavizham.mp4" muted loop playsinline preload="none"></video></div>
+  <div class="bgl" data-for="#contact" data-fx="zoom" data-name="Zoom dissolve" style="--g:linear-gradient(rgba(14,7,24,.6),rgba(14,7,24,.86))"><video src="assets/bg-engagement.mp4" muted loop playsinline preload="none"></video></div>
+</div>
+<div class="fxl mono" id="fxl" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="cur" aria-hidden="true"><em>PLAY</em></div>
 
@@ -643,6 +665,37 @@ function layout() {
 }
 layout(); addEventListener('resize', layout); addEventListener('load', layout);
 
+/* ---- moving backgrounds + scroll transitions ---- */
+const fxl = $('#fxl'); let bgClip = 0;
+const layers = reduce ? [] : $$('.bgl').map(el => ({ el, sec: $(el.dataset.for), fx: el.dataset.fx, vids: $$('video', el), multi: el.classList.contains('multi'), t: -1, on: false }));
+const curVid = L => L.multi ? L.vids[bgClip] : L.vids[0];
+function setClipBg(i) {
+  if (i === bgClip || i < 0) return; bgClip = i;
+  const L = layers.find(l => l.multi); if (!L) return;
+  L.vids.forEach((v, j) => { v.classList.toggle('on', j === i); (j === i && L.on) ? v.play().catch(() => {}) : v.pause(); });
+}
+layers.forEach(L => { if (L.multi) L.vids[0].classList.add('on'); });
+function backgrounds(vh) {
+  let label = '';
+  layers.forEach((L, i) => {
+    const t = i ? clamp((vh - L.sec.getBoundingClientRect().top) / (vh * .9), 0, 1) : 1, e = t * t * (3 - 2 * t), st = L.el.style;
+    if (t > .04 && t < .96) label = L.el.dataset.name;
+    if (t === L.t) return; L.t = t;
+    st.visibility = t > 0 ? 'visible' : 'hidden';
+    if (L.fx === 'iris') st.clipPath = t < 1 ? `circle(${e * 125}% at 50% 55%)` : 'none';
+    else if (L.fx === 'wipe') st.clipPath = t < 1 ? `polygon(0 0,${e * 135}% 0,${e * 135 - 35}% 100%,0 100%)` : 'none';
+    else if (L.fx === 'barn') st.clipPath = t < 1 ? `inset(0 ${(1 - e) * 50}%)` : 'none';
+    else if (L.fx === 'rise') st.clipPath = t < 1 ? `inset(${(1 - e) * 100}% 0 0 0)` : 'none';
+    else if (L.fx === 'zoom') { st.opacity = e; st.transform = `scale(${1.6 - e * .6})`; }
+  });
+  layers.forEach((L, i) => {                              // only the layer you can see keeps decoding
+    const nx = layers[i + 1], on = L.t > 0 && (!nx || nx.t < 1);
+    if (on === L.on) return; L.on = on;
+    L.vids.forEach(v => v.pause()); if (on) curVid(L).play().catch(() => {});
+  });
+  fxl.classList.toggle('on', !!label); if (label) fxl.textContent = '◆ Transition · ' + label;
+}
+
 /* ---- timecode, scrubber, scroll-driven bits ---- */
 const tc = $('#tc'), ph = $('#ph'), pad = n => String(n).padStart(2, '0');
 const sayWords = (() => {
@@ -669,7 +722,8 @@ function tick(t) {
   tc.textContent = `TC ${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}:${pad(fr)}`;
   ph.style.transform = `translateX(${clamp(y / H, 0, 1) * (innerWidth - 2)}px)`;
   if (!reduce) bands.forEach(b => { b.x += b.dir * (1.1 + Math.abs(vel) * .35) * (vel < -1 ? -1 : 1); if (b.w) b.x = ((b.x % b.w) - b.w) % b.w; b.el.style.transform = `translate3d(${b.x}px,0,0) skewX(${clamp(vel * -.35, -14, 14)}deg)`; });
-  if (maxX) { const p = clamp(-pin.getBoundingClientRect().top / maxX, 0, 1); tx += (p * maxX - tx) * .12; thud.style.setProperty('--p', p); cn.textContent = pad(Math.min(6, Math.floor(p * 6) + 1)); track.style.transform = `translate3d(${-tx}px,0,0) skewX(${clamp(vel * -.12, -5, 5)}deg)`; }
+  if (maxX) { const p = clamp(-pin.getBoundingClientRect().top / maxX, 0, 1); tx += (p * maxX - tx) * .12; thud.style.setProperty('--p', p); cn.textContent = pad(Math.min(6, Math.floor(p * 6) + 1)); setClipBg(Math.min(5, Math.floor(p * 6))); track.style.transform = `translate3d(${-tx}px,0,0) skewX(${clamp(vel * -.12, -5, 5)}deg)`; }
+  backgrounds(innerHeight);
   const sr = spot.getBoundingClientRect();
   if (!reduce && sr.top < innerHeight && sr.bottom > 0) {   // spotlight: type slides, phone straightens
     const sp = clamp((innerHeight - sr.top) / (innerHeight + sr.height), 0, 1);
@@ -690,7 +744,8 @@ $$('.rv,.split').forEach(el => io.observe(el));
 $$('.split .line').forEach((l, i) => l.firstElementChild.style.transitionDelay = i * .12 + 's');
 
 /* ---- clip previews play only while on screen ---- */
-const vio = new IntersectionObserver(es => es.forEach(e => { const v = e.target; e.isIntersecting ? v.play().catch(() => {}) : v.pause(); }), { threshold: .45 });
+const clips = $$('.clip');
+const vio = new IntersectionObserver(es => es.forEach(e => { const v = e.target; e.isIntersecting ? v.play().catch(() => {}) : v.pause(); if (e.isIntersecting && !maxX) setClipBg(clips.indexOf(v.closest('.clip'))); }), { threshold: .45 });
 $$('.clip video,.phone video').forEach(v => vio.observe(v));
 
 /* ---- lightbox ---- */
