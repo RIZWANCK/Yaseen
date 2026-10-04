@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Muhammed Yaseen · Editor</title>
+<meta name="description" content="Muhammed Yaseen is a video editor and motion designer. Video shoots, short-form and long-form editing, motion graphics.">
+<meta name="theme-color" content="#060807">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Antonio:wght@300;400;700&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400;1,6..96,500&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
+<script>document.documentElement.classList.add('js')</script>
+<style>
+/* Layout concept: the page is a film. A title card opens it, you zoom through the title into
+   the footage, each section is a scene written like a screenplay, and it ends on rolling credits.
+   The interface stays black, cream and one red; the footage carries the colour. */
+:root{
+  color-scheme:dark;
+  --black:#060807; --night:#0c110e; --line:rgba(236,227,208,.16);
+  --cream:#ece3d0; --dim:#8d968b; --red:#d81e3f; --green:#0d2018; --paper:#e9dfc9;
+  --title:'Bodoni Moda','Didot','Bodoni 72',Georgia,serif;
+  --bill:'Antonio','Oswald','Arial Narrow',Impact,sans-serif;
+  --script:'Courier Prime','Courier New',Courier,monospace;
+  --gut:clamp(18px,4.5vw,72px);
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--black);color:var(--cream);font:400 clamp(14px,1.02vw,17px)/1.6 var(--script);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img,video,canvas{display:block;max-width:100%}
+img{height:auto}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0;text-align:inherit}
+:focus-visible{outline:1px solid var(--red);outline-offset:5px}
+::selection{background:var(--red);color:var(--cream)}
+.bill{font-family:var(--bill);font-weight:400;text-transform:uppercase;letter-spacing:.22em;font-size:.74rem}
+
+/* film texture */
+.grain{position:fixed;inset:-50%;z-index:80;pointer-events:none;opacity:.075;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain .9s steps(5) infinite}
+@keyframes grain{20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-4%)}60%{transform:translate(-4%,-2%)}80%{transform:translate(3%,3%)}}
+.vig{position:fixed;inset:0;z-index:79;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.38) 100%)}
+
+/* ---------- opening title card: the gate opens ---------- */
+.intro{position:fixed;inset:0;z-index:100;animation:gone 0s linear 3.1s forwards}
+.intro i{position:absolute;left:0;right:0;height:50.5%;background:#000;animation:gate 1.3s cubic-bezier(.7,0,.2,1) 1.8s forwards}
+.intro i:nth-of-type(1){top:0;--to:-101%}
+.intro i:nth-of-type(2){bottom:0;--to:101%}
+.intro p{position:absolute;inset:0;z-index:1;margin:0;display:grid;place-content:center;gap:.9em;text-align:center;padding:var(--gut);animation:card 1.75s ease .15s both}
+.intro b{font:400 .8rem var(--bill);letter-spacing:.5em;text-transform:uppercase;color:var(--dim)}
+.intro em{font:italic 400 clamp(1.6rem,4vw,3rem)/1.1 var(--title)}
+@keyframes gate{to{transform:translateY(var(--to))}}
+@keyframes card{0%{opacity:0}30%,72%{opacity:1}100%{opacity:0}}
+@keyframes gone{to{visibility:hidden}}
+.intro.skip{display:none}
+
+/* ---------- nav + scrubber ---------- */
+.nav{position:fixed;inset:0 0 auto 0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:calc(18px + env(safe-area-inset-top,0px)) var(--gut) 18px;mix-blend-mode:difference;color:#fff}
+.nav .logo{font:italic 500 1.25rem/1 var(--title);letter-spacing:0;text-transform:none}
+.nav .tc{font:400 .78rem var(--script);letter-spacing:.06em;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:.6em}
+.nav .tc::before{content:"";width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+.nav ul{display:flex;gap:clamp(16px,2.6vw,38px);list-style:none;margin:0;padding:0}
+.nav li a{position:relative;padding:6px 0}
+.nav li a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .5s var(--ease)}
+.nav li a:hover::after{transform:scaleX(1);transform-origin:left}
+@media(max-width:720px){.nav li:not(:last-child){display:none}}
+.scrub{position:fixed;inset:auto 0 0 0;z-index:60;height:calc(2px + env(safe-area-inset-bottom,0px));background:rgba(236,227,208,.12)}
+.scrub span{position:absolute;left:0;top:0;height:2px;width:100%;background:var(--red);transform-origin:left;transform:scaleX(0)}
+
+.mode{position:fixed;right:var(--gut);bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;padding:3px;border-radius:99px;background:rgba(6,8,7,.78);backdrop-filter:blur(10px);box-shadow:0 0 0 1px rgba(236,227,208,.3),0 14px 30px -10px #000;color:var(--cream)}
+.mode>*{padding:.7em 1.2em;border-radius:99px;transition:color .3s}
+.mode span{background:var(--cream);color:var(--black)}
+.mode a:hover{color:var(--red)}
+@media(max-width:720px){.mode>*{padding:.6em .9em}.js .hud{right:calc(var(--gut) + 150px)}}
+
+/* ---------- cursor ---------- */
+.cur{position:fixed;left:0;top:0;z-index:90;pointer-events:none;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:1px solid var(--cream);
+  display:grid;place-items:center;transition:width .4s var(--ease),height .4s var(--ease),margin .4s var(--ease),background .3s,opacity .3s;opacity:0;mix-blend-mode:difference}
+.cur em{font:400 .66rem/1 var(--bill);letter-spacing:.24em;font-style:normal;color:var(--black);opacity:0;transition:opacity .2s;padding-left:.24em}
+.cur.on{opacity:1}
+.cur.big{width:92px;height:92px;margin:-46px 0 0 -46px;background:var(--cream);mix-blend-mode:normal}
+.cur.big em{opacity:1}
+@media(hover:none),(pointer:coarse){.cur{display:none}}
+
+/* ---------- shared scene furniture ---------- */
+.scene{position:relative;padding:clamp(90px,13vw,200px) var(--gut)}
+.slug{display:flex;gap:1.4em;align-items:baseline;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;margin:0 0 1.6em}
+.slug b{color:var(--red);font-weight:400}
+.title{font:400 clamp(3rem,9.5vw,9.5rem)/.95 var(--title);letter-spacing:-.025em;margin:0;text-wrap:balance}
+.title em{font-style:italic;font-weight:400}
+.js .fx{opacity:0;filter:blur(14px);letter-spacing:.06em;transition:opacity 1.6s ease,filter 1.6s ease,letter-spacing 2s var(--ease)}
+.js .fx.in{opacity:1;filter:none;letter-spacing:-.025em}
+.js .rv{opacity:0;transform:translateY(26px);transition:opacity 1.2s ease,transform 1.2s var(--ease);transition-delay:var(--d,0s)}
+.js .rv.in{opacity:1;transform:none}
+.js .wipe{background:var(--night)}
+.js .wipe img{clip-path:inset(0 0 100% 0);transition:clip-path 1.6s cubic-bezier(.7,0,.2,1);transition-delay:var(--d,0s)}
+.js .wipe.in img{clip-path:inset(0)}
+
+/* ---------- hero: zoom through the title into the reel ---------- */
+.hero{position:relative;height:340vh;background:#000}
+.hero-stick{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:#000}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:none}
+#reel{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
+.hero h1{position:absolute;inset:0;margin:0;display:grid;place-items:center;text-align:center;font:700 16vw/1 var(--bill);text-transform:uppercase;color:var(--cream)}
+.hero.live #cv{display:block}
+.hero.live h1{inset:auto;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.hu{position:absolute;left:var(--lx,var(--gut));right:var(--lx,var(--gut));display:flex;justify-content:space-between;align-items:flex-end;gap:16px;opacity:var(--ui,1)}
+.hu-top{bottom:72%}
+.hu-bot{top:72%;align-items:flex-start}
+.first{font:italic 400 clamp(1.9rem,4.6vw,4.4rem)/.9 var(--title);margin:0;animation:fadeUp 1.6s var(--ease) 2.5s both}
+.roles{margin:0;color:var(--dim);animation:fadeUp 1.6s var(--ease) 2.7s both;text-align:right}
+.hu-bot>*{animation:fadeUp 1.6s var(--ease) 2.9s both;margin:0}
+.cue{display:flex;align-items:center;gap:1em;color:var(--dim)}
+.cue::after{content:"";width:1px;height:44px;background:linear-gradient(var(--cream),transparent);animation:drip 2.2s ease-in-out infinite;transform-origin:top}
+@keyframes drip{0%{transform:scaleY(0)}60%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}}
+.bar{position:absolute;left:0;right:0;height:var(--bar,12vh);background:#000;z-index:2}
+.bar.t{top:0;transform:translateY(calc((1 - var(--b,0)) * -100%))}
+.bar.b{bottom:0;transform:translateY(calc((1 - var(--b,0)) * 100%))}
+.shade{position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.72));opacity:var(--b,0)}
+.sub{position:absolute;left:var(--gut);right:var(--gut);bottom:calc(var(--bar,12vh) + 5vh);z-index:3;margin:0 auto;max-width:44rem;text-align:center;
+  font:italic 400 clamp(1.15rem,2.2vw,1.9rem)/1.3 var(--title);text-shadow:0 2px 18px #000,0 0 2px #000;opacity:var(--s,0);transform:translateY(calc((1 - var(--s,0)) * 14px));text-wrap:balance}
+.fade{position:absolute;inset:0;background:#000;z-index:4;opacity:var(--f,0);pointer-events:none}
+@media(max-width:640px){.roles{max-width:9em}.hu-bot>p:first-child{max-width:12em}}
+
+/* ---------- film strip ---------- */
+.film{position:relative;z-index:2;padding:0;margin:-5vh 0;overflow:hidden;pointer-events:none}
+.film-in{transform:rotate(-2deg) scale(1.04);background:#15110d;padding:26px 0;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.film-in::before,.film-in::after{content:"";position:absolute;left:0;right:0;height:12px;background:repeating-linear-gradient(90deg,transparent 0 10px,rgba(236,227,208,.75) 10px 24px,transparent 24px 34px)}
+.film-in::before{top:7px}.film-in::after{bottom:7px}
+.film-track{display:flex;gap:8px;width:max-content;will-change:transform}
+.film-track img{height:clamp(110px,15vw,210px);width:auto;max-width:none;aspect-ratio:420/236;object-fit:cover;filter:saturate(.9) contrast(1.05)}
+
+/* ---------- scene 01: the editor (a screenplay page) ---------- */
+.paper{background:var(--paper);color:#12160f;--dim:#5e6459;--line:rgba(18,22,15,.22)}
+.paper::before{content:"";position:absolute;left:clamp(8px,1.6vw,26px);top:12%;bottom:12%;width:14px;background:radial-gradient(circle,var(--black) 0 6px,transparent 7px) center top/14px 33.33% repeat-y;opacity:.85}
+.paper .slug b{color:#b3122f}
+.paper .still.small{outline-color:var(--paper)}
+@media(max-width:860px){.paper::before{display:none}}
+
+.about{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1fr);gap:clamp(34px,7vw,120px);align-items:center}
+.stills{position:relative;justify-self:center;width:min(100%,460px)}
+.still{margin:0;overflow:hidden;position:relative;box-shadow:0 30px 70px rgba(0,0,0,.3)}
+.still img{width:100%;aspect-ratio:3/4;object-fit:cover;transform:scale(1.18);will-change:transform}
+.still.small{position:absolute;right:clamp(-56px,-4vw,-14px);bottom:-9%;width:44%;outline:8px solid var(--black);box-shadow:0 24px 50px rgba(0,0,0,.35)}
+.still.small img{aspect-ratio:3/5}
+.stills>p{position:absolute;left:0;top:calc(100% + 12px);margin:0;color:var(--dim);white-space:nowrap}
+.page{max-width:36rem}
+.page .title{font-size:clamp(3rem,7.4vw,7.4rem);white-space:nowrap}
+.page .action{color:var(--dim);margin:0 0 2.2em;max-width:34rem}
+.page .who{text-align:center;text-transform:uppercase;margin:0 0 .2em;letter-spacing:.06em}
+.vo{font:400 clamp(1.5rem,2.7vw,2.5rem)/1.22 var(--title);letter-spacing:-.01em;margin:0 0 1.6em;text-wrap:balance}
+.vo span{opacity:.2;transition:opacity .6s}
+.vo span.lit{opacity:1}
+html:not(.js) .vo span{opacity:1}
+.sheet{margin:0;display:grid;grid-template-columns:auto 1fr;border-top:1px solid var(--line)}
+.sheet dt,.sheet dd{margin:0;padding:.85em 0;border-bottom:1px solid var(--line)}
+.sheet dt{color:var(--dim);padding-right:2.4em}
+.sheet dd{font:400 1.12rem/1.3 var(--title)}
+@media(max-width:860px){.about{grid-template-columns:1fr}.stills{width:min(78%,360px);justify-self:start;margin-bottom:50px}}
+
+/* ---------- scene 02: the reel ---------- */
+.reel-head{padding-bottom:clamp(30px,5vw,70px);background:radial-gradient(60% 90% at 85% 30%,rgba(216,30,63,.26),transparent 70%),radial-gradient(55% 80% at 5% 100%,rgba(30,90,62,.34),transparent 70%)}
+.reel-head p:last-child{max-width:30rem;color:var(--dim);margin:1.8em 0 0}
+.pin{position:relative}
+.stage{position:relative}
+.bd{display:none}
+.slide{display:grid;gap:clamp(22px,4vw,70px);padding:40px var(--gut)}
+.media{display:grid;place-items:center;min-width:0;min-height:0}
+.frame{position:relative;display:block;height:min(70vh,680px);aspect-ratio:9/16;max-width:100%;overflow:hidden;background:var(--night)}
+.wide .frame{height:auto;width:100%;aspect-ratio:16/9}
+.frame video{width:100%;height:100%;object-fit:cover;transition:transform 2.4s var(--ease)}
+.frame:hover video{transform:scale(1.04)}
+.frame::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(236,227,208,.22);pointer-events:none}
+.txt{min-width:0;max-width:34rem}
+.txt .kick{color:var(--dim);display:flex;gap:1.2em;margin:0 0 1.3em}
+.txt .kick b{color:var(--red);font-weight:400}
+.txt h3{font:400 clamp(2.4rem,5.4vw,5.4rem)/.96 var(--title);letter-spacing:-.025em;margin:0 0 .35em}
+.txt h3 em{font-style:italic}
+.txt h3 small{display:block;font:italic 400 .36em/1.2 var(--title);letter-spacing:0;color:var(--dim);margin-top:.5em}
+.txt .action{margin:0 0 1.8em;color:var(--cream);max-width:30rem}
+.block{font:300 clamp(.95rem,1.25vw,1.2rem)/1.5 var(--bill);text-transform:uppercase;letter-spacing:.14em;color:var(--cream);margin:0;border-top:1px solid var(--line);padding-top:1.1em}
+.block i{font-style:normal;font-size:.62em;letter-spacing:.2em;color:var(--dim);margin:0 .5em 0 1.4em}
+.block i:first-child{margin-left:0}
+.watch{display:inline-flex;align-items:center;gap:.9em;margin-top:1.8em;padding-bottom:.35em;border-bottom:1px solid var(--cream);transition:gap .5s var(--ease),color .3s,border-color .3s}
+.watch:hover{gap:1.5em;color:var(--red);border-color:var(--red)}
+.hud{display:none}
+
+/* pinned, one cut at a time (needs JS) */
+.js .stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+.js .bd{display:block;position:absolute;inset:-12%;z-index:0}
+.js .bd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(70px) saturate(.85);opacity:0;transition:opacity 1.4s ease}
+.js .bd img.on{opacity:.58}
+.js .bd::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 65% 50%,transparent 20%,rgba(6,8,7,.82) 90%)}
+.js .slide{position:absolute;inset:0;z-index:1;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:center;padding:96px var(--gut) 92px;visibility:hidden;opacity:0;transition:opacity .3s ease,visibility 0s .3s}
+.js .slide.on{visibility:visible;opacity:1;transition:opacity .2s ease .3s,visibility 0s .3s}
+.js .slide .media{order:2;height:100%}
+.js .slide .frame{clip-path:inset(0 0 100% 0);transition:clip-path 0s .4s}
+.js .slide.on .frame{clip-path:inset(0);transition:clip-path 1.3s cubic-bezier(.7,0,.2,1) .35s}
+.js .slide .txt>*{opacity:0;transform:translateY(22px);transition:opacity 0s .4s,transform 0s .4s}
+.js .slide.on .txt>*{opacity:1;transform:none;transition:opacity 1.1s ease,transform 1.2s var(--ease);transition-delay:calc(.45s + var(--i,0) * .09s)}
+.js .hud{display:flex;position:absolute;z-index:2;left:var(--gut);right:calc(var(--gut) + 190px);bottom:34px;align-items:center;gap:clamp(8px,1.4vw,18px)}
+.hud button{flex:1;padding:12px 0 0;border-top:1px solid var(--line);color:var(--dim);transition:color .4s,border-color .4s,flex .8s var(--ease);white-space:nowrap;overflow:hidden}
+.hud button span{display:none}
+.hud button.on{color:var(--cream);border-color:var(--red);flex:2.6}
+.hud button.on span{display:inline}
+.hud button:hover{color:var(--cream)}
+.cut{position:absolute;inset:0;z-index:3;background:#000;opacity:0;pointer-events:none}
+.cut.go{animation:cut .6s ease}
+@keyframes cut{0%{opacity:0}45%,55%{opacity:1}100%{opacity:0}}
+@media(max-width:860px){
+  .js .slide{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:start;align-items:start;padding:78px var(--gut) 70px;gap:18px}
+  .js .slide .media{order:0;height:auto}
+  .js .slide .frame{height:42vh;height:42svh}
+  .js .slide.wide .frame{height:auto}
+  .txt h3{font-size:clamp(2rem,9vw,3rem)}
+  .txt .action{margin-bottom:1em}
+  .block{font-size:.8rem}
+  .watch{margin-top:1em}
+  .hud button.on span{display:none}
+  .hud button.on{flex:1}
+}
+
+/* ---------- scene 03: services + suite ---------- */
+.svc{background:radial-gradient(70% 50% at 100% 0,rgba(216,30,63,.14),transparent 70%),linear-gradient(#0a1611,var(--green) 40%,#0a1611)}
+.svc-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:clamp(30px,6vw,100px);margin-top:clamp(34px,6vw,90px);align-items:start}
+.svc-list{list-style:none;margin:0;padding:0}
+.svc-list>li{display:grid;grid-template-columns:3.4rem minmax(0,1fr);gap:6px 10px;align-items:baseline;padding:clamp(18px,2.2vw,30px) 0;border-top:1px solid var(--line);transition:padding .7s var(--ease);cursor:default}
+.svc-list>li:last-child{border-bottom:1px solid var(--line)}
+.svc-list>li>span{color:var(--dim);transition:color .4s}
+.svc h3{font:400 clamp(2.1rem,5vw,4.8rem)/1 var(--title);letter-spacing:-.025em;margin:0}
+.svc-list>li p{grid-column:2;margin:.5em 0 0;color:var(--dim);max-width:32rem;transition:color .4s}
+.svc-list>li.act{padding-left:clamp(0px,1.6vw,24px)}
+.svc-list>li.act h3{font-style:italic}
+.svc-list>li.act p{color:var(--cream)}
+.svc-list>li.act>span{color:var(--red)}
+.svc-still{margin:0;position:sticky;top:14vh;overflow:hidden;aspect-ratio:4/5;background:var(--night);box-shadow:0 40px 90px rgba(0,0,0,.55)}
+.svc-still img{width:100%;height:100%;object-fit:cover;transition:opacity .3s ease}
+.svc-still::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(236,227,208,.25)}
+@media(max-width:860px){.svc-grid{grid-template-columns:1fr}.svc-still{position:relative;top:0;order:-1;aspect-ratio:16/11}.svc-list>li{grid-template-columns:2.4rem minmax(0,1fr)}}
+
+.suite{margin-top:clamp(70px,10vw,150px);display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:clamp(26px,5vw,80px);align-items:center}
+.suite ol{list-style:none;margin:1.4em 0 0;padding:0;font:400 clamp(1.8rem,3.6vw,3.4rem)/1.15 var(--title);letter-spacing:-.02em}
+.suite ol li{display:flex;align-items:baseline;gap:.7em;flex-wrap:wrap}
+.suite ol small{font:400 .72rem var(--script);letter-spacing:.04em;color:var(--dim);text-transform:uppercase}
+.tl{border:1px solid var(--line);background:var(--night);padding:12px 0;position:relative;overflow:hidden;min-width:0}
+.tl .ruler{height:18px;margin-left:50px;background:repeating-linear-gradient(90deg,rgba(236,227,208,.3) 0 1px,transparent 1px 20px) repeat-x;background-size:auto 6px;border-bottom:1px solid var(--line)}
+.row{display:grid;grid-template-columns:50px 1fr;align-items:center;height:40px;border-bottom:1px solid rgba(236,227,208,.07)}
+.row>b{font:400 .68rem var(--script);color:var(--dim);text-align:center}
+.lane{position:relative;height:26px}
+.lane i{position:absolute;top:0;bottom:0;left:var(--l);width:var(--w);background:var(--c,rgba(236,227,208,.16));border-left:2px solid var(--cream);color:var(--cream);font:400 .62rem/26px var(--script);font-style:normal;padding-left:8px;white-space:nowrap;overflow:hidden;
+  transform-origin:left;animation:grow 1.6s var(--ease) both;animation-play-state:paused}
+.in .lane i{animation-play-state:running}
+@keyframes grow{from{transform:scaleX(0)}}
+.lane.wave i{top:5px;bottom:5px;border:0;background:repeating-linear-gradient(90deg,rgba(236,227,208,.5) 0 1px,transparent 1px 4px)}
+.ph{position:absolute;top:8px;bottom:0;left:50px;width:1px;background:var(--red);animation:sweep 11s linear infinite}
+.ph::before{content:"";position:absolute;left:-5px;top:0;border:5px solid transparent;border-top:8px solid var(--red)}
+@keyframes sweep{to{left:100%}}
+@media(max-width:860px){.suite{grid-template-columns:1fr}}
+
+/* ---------- final scene: contact (a red poster) ---------- */
+.contact{background:#b3122f;overflow:hidden;--dim:rgba(236,227,208,.74);--line:rgba(236,227,208,.38);isolation:isolate}
+.contact::before{content:"";position:absolute;inset:0;z-index:-1;background:url(assets/behind-camera.jpg) right 22%/cover no-repeat;filter:grayscale(1) contrast(1.25) brightness(1.05);mix-blend-mode:multiply;opacity:.92}
+.contact::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#b3122f 8%,rgba(179,18,47,.55) 55%,rgba(179,18,47,0)),linear-gradient(0deg,rgba(60,4,14,.75),transparent 45%)}
+.contact .slug b{color:var(--cream)}
+.contact ::selection{background:var(--black)}
+.ways{margin-top:clamp(34px,6vw,90px);border-top:1px solid var(--line);max-width:62rem}
+.way{display:grid;grid-template-columns:minmax(7rem,12rem) minmax(0,1fr) auto;gap:10px 24px;align-items:baseline;padding:clamp(16px,2vw,26px) 0;border-bottom:1px solid var(--line);transition:padding .7s var(--ease)}
+.way span{color:var(--dim)}
+.way b{font:400 clamp(1.35rem,3.1vw,2.8rem)/1.1 var(--title);letter-spacing:-.015em;overflow-wrap:anywhere;user-select:all}
+.way u{text-decoration:none;color:var(--dim);transition:color .3s,transform .6s var(--ease)}
+.way:hover{padding-left:clamp(0px,1.6vw,24px)}
+.way:hover u{color:var(--cream);transform:translateX(6px)}
+@media(max-width:640px){.way{grid-template-columns:1fr auto}.way span{grid-column:1/-1}}
+
+/* ---------- last frame ---------- */
+.end{position:relative;padding:clamp(60px,9vw,130px) var(--gut) clamp(40px,5vw,70px);text-align:center;overflow:hidden;background:radial-gradient(60% 70% at 50% 35%,rgba(216,30,63,.24),transparent 70%),radial-gradient(50% 60% at 50% 110%,rgba(30,90,62,.4),transparent 70%)}
+.last{margin:0 auto;width:min(72vw,420px);aspect-ratio:3/4;overflow:hidden;position:relative;box-shadow:0 50px 120px rgba(0,0,0,.7)}
+.last img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;transform:scale(1.18);will-change:transform}
+.last::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,8,7,.85),transparent 45%);box-shadow:inset 0 0 0 1px rgba(236,227,208,.25)}
+.foot{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;color:var(--dim);margin-top:clamp(40px,6vw,80px);text-align:left}
+.foot a{color:var(--cream);border-bottom:1px solid var(--line)}
+
+/* ---------- lightbox ---------- */
+dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none;overflow:visible;color:var(--cream)}
+dialog::backdrop{background:rgba(0,0,0,.94)}
+dialog video{max-width:92vw;max-height:82vh;background:#000}
+dialog[open]{animation:open 1s var(--ease)}
+@keyframes open{from{clip-path:inset(50% 0);opacity:0}to{clip-path:inset(-60px 0 0 0)}}
+dialog button{position:absolute;right:0;top:-40px;padding:.6em 0;color:var(--dim)}
+dialog button:hover{color:var(--cream)}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
+  .intro{display:none}
+  .js .fx,.js .rv{opacity:1;transform:none;filter:none}
+  .js .wipe img{clip-path:none}
+  .vo span{opacity:1}
+  .still img{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="intro" id="intro" aria-hidden="true">
+  <i></i><i></i>
+  <p><b>A portfolio in seven cuts</b><em>shot, cut &amp; animated by Muhammed Yaseen</em></p>
+</div>
+<div class="grain" aria-hidden="true"></div>
+<div class="vig" aria-hidden="true"></div>
+<div class="cur" aria-hidden="true"><em>PLAY</em></div>
+
+<nav class="nav bill" aria-label="Main">
+  <a class="logo" href="#top" aria-label="Muhammed Yaseen, back to the start">M. Yaseen</a>
+  <span class="tc" id="tc" aria-hidden="true">00:00:00:00</span>
+  <ul>
+    <li><a href="#about">Editor</a></li>
+    <li><a href="#work">Reel</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+<div class="scrub" aria-hidden="true"><span id="ph"></span></div>
+<div class="mode bill" role="group" aria-label="Portfolio style"><a href="colour.html">Colour</a><span aria-current="page">Cinema</span></div>
+
+<main id="top">
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="hero">
+  <div class="hero-stick">
+    <h1>Muhammed Yaseen</h1>
+    <canvas id="cv" aria-hidden="true"></canvas>
+    <video id="reel" src="assets/hero.mp4" muted loop playsinline autoplay preload="auto" aria-hidden="true" tabindex="-1"></video>
+
+    <div class="hu hu-top">
+      <p class="first">Muhammed</p>
+      <p class="roles bill">Editor · Motion graphics · Videography</p>
+    </div>
+    <div class="hu hu-bot">
+      <p class="bill" style="color:var(--dim)">A portfolio in seven cuts</p>
+      <p class="cue bill">Scroll to roll</p>
+    </div>
+
+    <div class="shade" aria-hidden="true"></div>
+    <div class="bar t" aria-hidden="true"></div>
+    <div class="bar b" aria-hidden="true"></div>
+    <p class="sub">Creative video editor focused on clean visuals, smooth storytelling, motion graphics and impactful design.</p>
+    <div class="fade" aria-hidden="true"></div>
+  </div>
+</section>
+
+<div class="film" aria-hidden="true"><div class="film-in"><div class="film-track" id="film"><img src="assets/f01.jpg" alt="" loading="lazy"><img src="assets/f02.jpg" alt="" loading="lazy"><img src="assets/f03.jpg" alt="" loading="lazy"><img src="assets/f04.jpg" alt="" loading="lazy"><img src="assets/f05.jpg" alt="" loading="lazy"><img src="assets/f06.jpg" alt="" loading="lazy"><img src="assets/f07.jpg" alt="" loading="lazy"><img src="assets/f08.jpg" alt="" loading="lazy"><img src="assets/f09.jpg" alt="" loading="lazy"><img src="assets/f10.jpg" alt="" loading="lazy"><img src="assets/f11.jpg" alt="" loading="lazy"><img src="assets/f12.jpg" alt="" loading="lazy"><img src="assets/f01.jpg" alt="" loading="lazy"><img src="assets/f02.jpg" alt="" loading="lazy"><img src="assets/f03.jpg" alt="" loading="lazy"><img src="assets/f04.jpg" alt="" loading="lazy"><img src="assets/f05.jpg" alt="" loading="lazy"><img src="assets/f06.jpg" alt="" loading="lazy"><img src="assets/f07.jpg" alt="" loading="lazy"><img src="assets/f08.jpg" alt="" loading="lazy"><img src="assets/f09.jpg" alt="" loading="lazy"><img src="assets/f10.jpg" alt="" loading="lazy"><img src="assets/f11.jpg" alt="" loading="lazy"><img src="assets/f12.jpg" alt="" loading="lazy"></div></div></div>
+
+<!-- ================= SCENE 01 · THE EDITOR ================= -->
+<section class="scene about paper" id="about">
+  <div class="stills">
+    <figure class="still wipe"><img src="assets/main.jpg" data-kb alt="Muhammed Yaseen at his editing desk wearing headphones, smiling at the camera" width="1400" height="1867" loading="lazy"></figure>
+    <figure class="still small wipe" style="--d:.35s"><img src="assets/portrait.jpg" data-kb alt="Muhammed Yaseen in a red shirt, smiling and looking off to the side, with dark green trees behind him" width="1100" height="1867" loading="lazy"></figure>
+    <p class="bill">Stills 01–02</p>
+  </div>
+
+  <div class="page">
+    <p class="slug"><b>Scene 01</b><span>Int. Edit suite — Night</span></p>
+    <h2 class="title fx">The <em>editor</em></h2>
+    <p class="action rv" style="margin-top:2.2em">A timeline glows in a dark room. Headphones on. MUHAMMED YASEEN, two years into the job, nudges a cut by a single frame and plays it back.</p>
+    <p class="who rv">Yaseen (V.O.)</p>
+    <p class="vo" id="vo">Creative video editor focused on clean visuals, smooth storytelling, motion graphics and impactful design for long-form and short-form videos.</p>
+    <dl class="sheet rv">
+      <dt>Title</dt><dd>Editor</dd>
+      <dt>Experience</dt><dd>2 years</dd>
+      <dt>Currently</dt><dd>Multimedia</dd>
+      <dt>Skills</dt><dd>Videography, video editing</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ================= SCENE 02 · THE REEL ================= -->
+<section id="work">
+  <div class="scene reel-head">
+    <p class="slug"><b>Scene 02</b><span>Int. Screening room — Continuous</span></p>
+    <h2 class="title fx">Seven <em>cuts</em></h2>
+    <p class="rv">Keep scrolling. Each cut plays as it comes up. Open any of them to watch it in full, with sound.</p>
+  </div>
+
+  <div class="pin" id="pin">
+    <div class="stage" id="stage">
+      <div class="bd" aria-hidden="true">
+        <img src="assets/varavu.jpg" alt=""><img src="assets/creators-cut.jpg" alt=""><img src="assets/pavizham.jpg" alt=""><img src="assets/fevicol.jpg" alt=""><img src="assets/engagement.jpg" alt=""><img src="assets/boutique.jpg" alt=""><img src="assets/event.jpg" alt="">
+      </div>
+
+      <article class="slide wide" data-name="Varavu">
+        <div class="media"><button class="frame" data-src="assets/varavu.mp4" data-cur aria-label="Watch Varavu with sound"><video src="assets/varavu.mp4" poster="assets/varavu.jpg" muted loop playsinline preload="none"></video></button></div>
+        <div class="txt">
+          <p class="kick bill"><b>Cut 01</b><span>Short film</span></p>
+          <h3 lang="ml">വരവ്<small lang="en">Varavu</small></h3>
+          <p class="action">A late-night thriller. An editor alone in the office, and something on the timeline that should not be there.</p>
+          <p class="block"><i>cinematography &amp; editing</i>Yaseen<i>story support</i>Sudheer, Faisal<i>cast</i>Sudheer<i>shoot assist</i>Surya<i>runtime</i>02:41</p>
+          <button class="watch bill" data-src="assets/varavu.mp4">Watch the film <span>→</span></button>
+        </div>
+      </article>
+
+      <article class="slide" data-name="Creators Cut">
+        <div class="media"><button class="frame" data-src="assets/creators-cut.mp4" data-cur aria-label="Watch Creators Cut with sound"><video src="assets/creators-cut.mp4" poster="assets/creators-cut.jpg" muted loop playsinline preload="none"></video></button></div>
+        <div class="txt">
+          <p class="kick bill"><b>Cut 02</b><span>Motion graphics</span></p>
+          <h3>Creators <em>Cut</em></h3>
+          <p class="action">A course launch built entirely in motion. 3D type, floating interface pieces and a camera that never stops moving.</p>
+          <p class="block"><i>motion design &amp; edit</i>Muhammed Yaseen<i>for</i>Finprov Miracle<i>runtime</i>01:12<i>format</i>9:16</p>
+          <button class="watch bill" data-src="assets/creators-cut.mp4">Watch the promo <span>→</span></button>
+        </div>
+      </article>
+
+      <article class="slide" data-name="Pavizham">
+        <div class="media"><button class="frame" data-src="assets/pavizham.mp4" data-cur aria-label="Watch Pavizham with sound"><video src="assets/pavizham.mp4" poster="assets/pavizham.jpg" muted loop playsinline preload="none"></video></button></div>
+        <div class="txt">
+          <p class="kick bill"><b>Cut 03</b><span>Cinematic reel</span></p>
+          <h3>Pavizham</h3>
+          <p class="action">A bus fleet shot like a car commercial. Low angles, whip pans and speed ramps under a clear sky.</p>
+          <p class="block"><i>shot &amp; edited by</i>Muhammed Yaseen<i>runtime</i>00:46<i>format</i>9:16</p>
+          <button class="watch bill" data-src="assets/pavizham.mp4">Watch the reel <span>→</span></button>
+        </div>
+      </article>
+
+      <article class="slide wide" data-name="Story Around the Product">
+        <div class="media"><button class="frame" data-src="assets/fevicol.mp4" data-cur aria-label="Watch Story Around the Product with sound"><video src="assets/fevicol.mp4" poster="assets/fevicol.jpg" muted loop playsinline preload="none"></video></button></div>
+        <div class="txt">
+          <p class="kick bill"><b>Cut 04</b><span>Kinetic type</span></p>
+          <h3>Story around <em>the product</em></h3>
+          <p class="action">Words orbit a product while the lesson lands. An animated explainer for a digital marketing class.</p>
+          <p class="block"><i>animation &amp; edit</i>Muhammed Yaseen<i>runtime</i>00:09<i>format</i>16:9</p>
+          <button class="watch bill" data-src="assets/fevicol.mp4">Watch the explainer <span>→</span></button>
+        </div>
+      </article>
+
+      <article class="slide" data-name="The Engagement">
+        <div class="media"><button class="frame" data-src="assets/engagement.mp4" data-cur aria-label="Watch The Engagement with sound"><video src="assets/engagement.mp4" poster="assets/engagement.jpg" muted loop playsinline preload="none"></video></button></div>
+        <div class="txt">
+          <p class="kick bill"><b>Cut 05</b><span>Event film</span></p>
+          <h3>The <em>Engagement</em></h3>
+          <p class="action">From the car door to the stage in under a minute, cut to the beat.</p>
+          <p class="block"><i>shot &amp; edited by</i>Muhammed Yaseen<i>runtime</i>00:47<i>format</i>9:16</p>
+          <button class="watch bill" data-src="assets/engagement.mp4">Watch the highlights <span>→</span></button>
+        </div>
+      </article>
+
+      <article class="slide" data-name="The Fitting Room">
+        <div class="media"><button class="frame" data-src="assets/boutique.mp4" data-cur aria-label="Watch The Fitting Room with sound"><video src="assets/boutique.mp4" poster="assets/boutique.jpg" muted loop playsinline preload="none"></video></button></div>
+        <div class="txt">
+          <p class="kick bill"><b>Cut 06</b><span>Fashion reel</span></p>
+          <h3>The Fitting <em>Room</em></h3>
+          <p class="action">A dress reveal told as a small story. In through the door, out with a twirl.</p>
+          <p class="block"><i>shot &amp; edited by</i>Muhammed Yaseen<i>runtime</i>00:40<i>format</i>9:16</p>
+          <button class="watch bill" data-src="assets/boutique.mp4">Watch the reel <span>→</span></button>
+        </div>
+      </article>
+
+      <article class="slide" data-name="On Stage">
+        <div class="media"><button class="frame" data-src="assets/event.mp4" data-cur aria-label="Watch On Stage with sound"><video src="assets/event.mp4" poster="assets/event.jpg" muted loop playsinline preload="none"></video></button></div>
+        <div class="txt">
+          <p class="kick bill"><b>Cut 07</b><span>Event coverage</span></p>
+          <h3>On <em>Stage</em></h3>
+          <p class="action">Live coverage from the floor of a business conference, starting on the camera monitor.</p>
+          <p class="block"><i>shot &amp; edited by</i>Muhammed Yaseen<i>runtime</i>00:11<i>format</i>9:16</p>
+          <button class="watch bill" data-src="assets/event.mp4">Watch the clip <span>→</span></button>
+        </div>
+      </article>
+
+      <div class="hud bill" id="hud" role="group" aria-label="Jump to a cut"></div>
+      <div class="cut" id="cut" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCENE 03 · SERVICES ================= -->
+<section class="scene svc" id="services">
+  <p class="slug"><b>Scene 03</b><span>Ext. On location — Day</span></p>
+  <h2 class="title fx">From the shoot<br>to the <em>final cut</em></h2>
+  <div class="svc-grid">
+    <ul class="svc-list">
+      <li class="rv act" data-img="assets/on-set.jpg" tabindex="0"><span class="bill">A</span><h3>Video shoots</h3><p>On location or in a studio. Events, interviews, products and reels, shot with the edit already in mind.</p></li>
+      <li class="rv" data-img="assets/pavizham.jpg" tabindex="0"><span class="bill">B</span><h3>Short-form editing</h3><p>Reels, Shorts and ads cut to hold attention from the first second.</p></li>
+      <li class="rv" data-img="assets/varavu.jpg" tabindex="0"><span class="bill">C</span><h3>Long-form editing</h3><p>YouTube videos, interviews and films with pacing that keeps people watching.</p></li>
+      <li class="rv" data-img="assets/creators-cut.jpg" tabindex="0"><span class="bill">D</span><h3>Motion graphics</h3><p>Kinetic type, 3D titles and animated explainers.</p></li>
+    </ul>
+    <figure class="svc-still rv"><img id="svcImg" src="assets/on-set.jpg" alt="An interview being filmed, seen from behind the camera with a studio light on the right"></figure>
+  </div>
+
+  <div class="suite rv">
+    <div>
+      <p class="slug" style="margin:0"><span>Cut on</span></p>
+      <ol>
+        <li>Premiere Pro <small>the edit</small></li>
+        <li>After Effects <small>the motion</small></li>
+        <li>CapCut <small>the quick turnaround</small></li>
+      </ol>
+    </div>
+    <div class="tl" aria-hidden="true">
+      <div class="ruler"></div>
+      <div class="row"><b>V3</b><div class="lane"><i style="--l:6%;--w:22%">title.aep</i><i style="--l:58%;--w:30%;animation-delay:.5s">kinetic_type.aep</i></div></div>
+      <div class="row"><b>V2</b><div class="lane"><i style="--l:2%;--w:34%;animation-delay:.1s">varavu_A-cam</i><i style="--l:38%;--w:18%;animation-delay:.3s;--c:rgba(216,30,63,.45)">b-roll</i><i style="--l:66%;--w:28%;animation-delay:.6s">pavizham_ramp</i></div></div>
+      <div class="row"><b>V1</b><div class="lane"><i style="--l:0%;--w:48%;animation-delay:.2s">engagement_main</i><i style="--l:50%;--w:46%;animation-delay:.4s">fitting_room</i></div></div>
+      <div class="row"><b>A1</b><div class="lane wave"><i style="--l:0%;--w:96%;animation-delay:.3s"></i></div></div>
+      <div class="row" style="border:0"><b>A2</b><div class="lane wave"><i style="--l:12%;--w:60%;animation-delay:.5s"></i></div></div>
+      <span class="ph"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FINAL SCENE · CONTACT ================= -->
+<section class="scene contact" id="contact">
+  <p class="slug"><b>Final scene</b><span>Fade in</span></p>
+  <h2 class="title fx">Let’s make<br>the <em>next cut</em>.</h2>
+  <div class="ways">
+    <a class="way rv" href="mailto:yaseennasar070@gmail.com" data-copy="yaseennasar070@gmail.com"><span class="bill">Email</span><b>yaseennasar070@gmail.com</b><u class="bill">Copy</u></a>
+    <a class="way rv" href="https://wa.me/919605100834" target="_blank" rel="noopener"><span class="bill">Phone · WhatsApp</span><b>+91 96051 00834</b><u class="bill">Message →</u></a>
+    <a class="way rv" href="https://www.instagram.com/yaseen__nasar" target="_blank" rel="noopener"><span class="bill">Instagram</span><b>@yaseen__nasar</b><u class="bill">Follow →</u></a>
+  </div>
+</section>
+
+<!-- ================= LAST FRAME ================= -->
+<footer class="end">
+  <figure class="last rv"><img src="assets/portrait.jpg" data-kb alt="Muhammed Yaseen in a red shirt, smiling, with dark green trees behind him" loading="lazy"></figure>
+  <div class="foot bill">
+    <span>© 2026 Muhammed Yaseen</span>
+    <a href="#top">Play it again ↑</a>
+  </div>
+</footer>
+</main>
+
+<dialog id="lb" aria-label="Video player">
+  <button class="bill" id="lbx">Close ✕</button>
+  <video id="lbv" controls playsinline></video>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+(() => {
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fine = matchMedia('(hover:hover) and (pointer:fine)').matches;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const ramp = (v, a, b) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const q = new URLSearchParams(location.search);            // ?hp=0.4 or ?cut=3 freeze a moment for previews
+const mouse = { x: innerWidth / 2, y: innerHeight / 2, nx: 0, ny: 0 };
+addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.nx = e.clientX / innerWidth - .5; mouse.ny = e.clientY / innerHeight - .5; }, { passive: true });
+
+/* ---- opening card can be skipped ---- */
+const intro = $('#intro');
+['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => intro.classList.add('skip'), { once: true, passive: true }));
+
+/* ---- smooth scroll ---- */
+let lenis = null;
+if (window.Lenis && !reduce) lenis = new Lenis({ lerp: .085 });
+const goTo = y => lenis ? lenis.scrollTo(y, { duration: 1.6 }) : scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+$$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+  const t = $(a.getAttribute('href')); if (!t) return;
+  e.preventDefault(); goTo(t.id === 'top' ? 0 : t.getBoundingClientRect().top + scrollY);
+}));
+
+/* ---- hero: the title is a window, scrolling flies through it ---- */
+const hero = $('#hero'), stick = $('.hero-stick'), cv = $('#cv'), ctx = cv.getContext('2d'), reel = $('#reel');
+const WORD = 'YASEEN', FONT = s => `700 ${s}px Antonio`; let geo = null, heroOn = true, hp = 0;
+function fit() {
+  const W = stick.clientWidth, H = stick.clientHeight, dpr = Math.min(devicePixelRatio || 1, 1.5);
+  ctx.font = FONT(200); const m = ctx.measureText(WORD);
+  const w = m.actualBoundingBoxLeft + m.actualBoundingBoxRight, gut = Math.max(18, W * .045);
+  const k = Math.min((W - gut * 2) / w, H * .56 / m.actualBoundingBoxAscent), fs = 200 * k;
+  const tw = w * k, cap = m.actualBoundingBoxAscent * k, x = (W - tw) / 2 + m.actualBoundingBoxLeft * k, y = (H + cap) / 2;
+  // fly-through point: the upright stem of the first E (measured before the resize below resets the font)
+  const fx = x + ctx.measureText('YAS').width * k + fs * .1, fy = y - cap * .5;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  geo = { W, H, dpr, fs, x, y, fx, fy, far: Math.hypot(W, H) / (fs * .05) * 1.6 };
+  stick.style.setProperty('--lx', (W - tw) / 2 + 'px');
+  const gap = Math.max(10, Math.min(22, W * .015));
+  $('.hu-top').style.bottom = H - (y - cap) + gap + 'px';
+  $('.hu-bot').style.top = y + gap + 'px';
+  stick.style.setProperty('--bar', Math.max(H * .09, Math.min(H * .2, (H - W / 2.39) / 2)) + 'px');
+  paint();
+}
+function paint() {
+  if (!geo) return;
+  const { W, H, dpr, fs, x, y, fx, fy, far } = geo;
+  const z = ramp(hp, .05, .6), scale = Math.pow(far, Math.pow(z, 1.25));
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#0c110e'; ctx.fillRect(0, 0, W, H);
+  let vid = null;
+  if (reel.readyState >= 2) {
+    const s = Math.max(W / reel.videoWidth, H / reel.videoHeight) * (1.14 - z * .1), vw = reel.videoWidth * s, vh = reel.videoHeight * s;
+    vid = [(W - vw) / 2 - mouse.nx * W * .03 * (1 - z), (H - vh) / 2 - mouse.ny * H * .04 * (1 - z), vw, vh];
+    ctx.drawImage(reel, ...vid);
+  }
+  if (z < 1) {
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.translate(fx, fy); ctx.scale(scale, scale); ctx.translate(-fx, -fy);
+    ctx.font = FONT(fs); ctx.fillStyle = '#000'; ctx.fillText(WORD, x, y);
+    ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = 1.2 / scale;
+    ctx.strokeStyle = `rgba(236,227,208,${.34 * (1 - z)})`; ctx.strokeText(WORD, x, y);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (vid) {                                               // the same footage, dim, behind the letters
+      ctx.globalCompositeOperation = 'destination-over'; ctx.globalAlpha = .22;
+      ctx.drawImage(reel, ...vid); ctx.globalAlpha = 1;
+    }
+  }
+  stick.style.setProperty('--ui', 1 - ramp(hp, .02, .12));
+  stick.style.setProperty('--b', ramp(hp, .58, .72));
+  stick.style.setProperty('--s', ramp(hp, .66, .76) * (1 - ramp(hp, .88, .95)));
+  stick.style.setProperty('--f', ramp(hp, .9, 1));
+}
+(document.fonts && document.fonts.load ? document.fonts.load(FONT(200)) : Promise.resolve()).then(() => {
+  fit(); hero.classList.add('live'); reel.play().catch(() => {});
+  'ResizeObserver' in window ? new ResizeObserver(fit).observe(stick) : addEventListener('resize', fit);
+}).catch(() => {});
+new IntersectionObserver(([e]) => { heroOn = e.isIntersecting; heroOn ? reel.play().catch(() => {}) : reel.pause(); }).observe(hero);
+
+/* ---- the reel: one cut on screen at a time ---- */
+const pin = $('#pin'), stage = $('#stage'), slides = $$('.slide'), bds = $$('.bd img'), hud = $('#hud'), cutEl = $('#cut');
+const N = slides.length; let cur = -1, stageOn = false;
+slides.forEach((s, i) => {
+  $$('.txt>*', s).forEach((el, j) => el.style.setProperty('--i', j));
+  const b = document.createElement('button');
+  b.textContent = String(i + 1).padStart(2, '0');
+  const name = document.createElement('span'); name.textContent = ' — ' + s.dataset.name; b.append(name);
+  b.setAttribute('aria-label', `Cut ${i + 1}: ${s.dataset.name}`);
+  b.addEventListener('click', () => goTo(pin.getBoundingClientRect().top + scrollY + (i + .5) / N * (pin.offsetHeight - innerHeight)));
+  hud.append(b);
+});
+const hudBtns = $$('button', hud);
+function playCur() { slides.forEach((s, i) => { const v = $('video', s); (i === cur && stageOn) ? v.play().catch(() => {}) : v.pause(); }); }
+function show(i) {
+  if (i === cur) return;
+  if (cur >= 0 && !reduce) { cutEl.classList.remove('go'); void cutEl.offsetWidth; cutEl.classList.add('go'); }
+  cur = i;
+  slides.forEach((s, j) => s.classList.toggle('on', j === i));
+  bds.forEach((b, j) => b.classList.toggle('on', j === i));
+  hudBtns.forEach((b, j) => b.classList.toggle('on', j === i));
+  playCur();
+}
+const layout = () => { pin.style.height = innerHeight * (1 + N * .85) + 'px'; };
+layout(); addEventListener('resize', layout);
+new IntersectionObserver(([e]) => { stageOn = e.isIntersecting; playCur(); }, { threshold: .3 }).observe(stage);
+
+/* ---- voice-over: split into words ---- */
+const vo = $('#vo'), voWords = vo.textContent.trim().split(/\s+/).map(w => { const s = document.createElement('span'); s.textContent = w; return s; });
+vo.textContent = ''; voWords.forEach((s, i) => { if (i) vo.append(' '); vo.append(s); });
+
+/* ---- one frame loop for everything scroll-driven ---- */
+const tc = $('#tc'), ph = $('#ph'), pad = n => String(n).padStart(2, '0'), kbs = $$('[data-kb]'), film = $('#film');
+function tick(t) {
+  if (lenis) lenis.raf(t);
+  const y = scrollY, vh = innerHeight, max = document.documentElement.scrollHeight - vh;
+  const f = Math.round(y / 5), s = Math.floor(f / 25);
+  tc.textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}:${pad(f % 25)}`;
+  ph.style.transform = `scaleX(${clamp(y / max)})`;
+  hp = q.has('hp') ? +q.get('hp') : clamp(y / (hero.offsetHeight - vh));
+  if (heroOn) paint();
+  if (!reduce) { const fw = film.scrollWidth / 2; if (fw) film.style.transform = `translate3d(${-((y * .35 + t * .025) % fw)}px,0,0)`; }
+  const pr = pin.getBoundingClientRect();
+  show(q.has('cut') ? +q.get('cut') : clamp(Math.floor(clamp(-pr.top / (pr.height - vh)) * N), 0, N - 1));
+  const vr = vo.getBoundingClientRect(), vp = clamp((vh * .85 - vr.top) / (vr.height + vh * .3));
+  voWords.forEach((w, i) => w.classList.toggle('lit', i / voWords.length < vp));
+  if (!reduce) kbs.forEach(img => { const r = img.parentElement.getBoundingClientRect(); const p = clamp((vh - r.top) / (vh + r.height)); img.style.transform = `scale(${1.2 - p * .14}) translateY(${(p - .5) * -5}%)`; });
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ---- reveals ---- */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .2 });
+$$('.rv,.fx,.wipe').forEach(el => io.observe(el));
+
+/* ---- lightbox ---- */
+const lb = $('#lb'), lbv = $('#lbv');
+$$('[data-src]').forEach(b => b.addEventListener('click', () => { lbv.src = b.dataset.src; lb.showModal(); if (lenis) lenis.stop(); lbv.play().catch(() => {}); }));
+$('#lbx').addEventListener('click', () => lb.close());
+lb.addEventListener('click', e => { if (e.target === lb) lb.close(); });
+lb.addEventListener('close', () => { lbv.pause(); lbv.removeAttribute('src'); lbv.load(); if (lenis) lenis.start(); });
+
+/* ---- cursor + service stills ---- */
+if (fine) {
+  const c = $('.cur'); let cx = mouse.x, cy = mouse.y;
+  addEventListener('pointermove', () => c.classList.add('on'), { once: true });
+  $$('[data-cur]').forEach(el => { el.addEventListener('pointerenter', () => c.classList.add('big')); el.addEventListener('pointerleave', () => c.classList.remove('big')); });
+  (function follow() {
+    cx += (mouse.x - cx) * .22; cy += (mouse.y - cy) * .22; c.style.transform = `translate3d(${cx}px,${cy}px,0)`;
+    requestAnimationFrame(follow);
+  })();
+}
+
+/* ---- services: the still follows the row you point at ---- */
+const sImg = $('#svcImg'), rows = $$('.svc-list>li'); let sCur = 'assets/on-set.jpg';
+rows.forEach(li => {
+  const go = () => {
+    rows.forEach(o => o.classList.toggle('act', o === li));
+    if (sCur === li.dataset.img) return; sCur = li.dataset.img;
+    sImg.style.opacity = 0;
+    setTimeout(() => { sImg.onload = () => { sImg.style.opacity = 1; }; sImg.src = sCur; sImg.alt = ''; }, 300);
+  };
+  li.addEventListener('pointerenter', go); li.addEventListener('focus', go); li.addEventListener('click', go);
+});
+
+/* ---- copy email ---- */
+$$('[data-copy]').forEach(a => a.addEventListener('click', e => {
+  const u = $('u', a);
+  if (navigator.clipboard) { e.preventDefault(); navigator.clipboard.writeText(a.dataset.copy).then(() => { u.textContent = 'Copied'; setTimeout(() => u.textContent = 'Copy', 1800); }, () => location.href = a.href); }
+}));
+})();
+</script>
+</body>
+</html>
