@@ -73,7 +73,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 .mode>*{padding:.7em 1.2em;border-radius:99px;transition:color .3s}
 .mode span{background:var(--cream);color:var(--black)}
 .mode a:hover{color:var(--red)}
-@media(max-width:720px){.mode>*{padding:.6em .9em}.js .hud{right:calc(var(--gut) + 150px)}}
+.mode{transition:transform .6s var(--ease)}
+@media(max-width:720px){.mode>*{padding:.6em .9em}.mode.away{transform:translateY(190%)}.js .stage .hud{right:var(--gut);bottom:76px}.js .stage .slide{padding-bottom:116px}}
+.frame:active,.watch:active,.way:active{scale:.97}
+@media(pointer:coarse){.grain{animation:none}}
 
 /* ---------- cursor ---------- */
 .cur{position:fixed;left:0;top:0;z-index:90;pointer-events:none;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:1px solid var(--cream);
@@ -86,7 +89,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 
 /* ---------- shared scene furniture ---------- */
 .scene{position:relative;padding:clamp(90px,13vw,200px) var(--gut)}
-.slug{display:flex;gap:1.4em;align-items:baseline;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;margin:0 0 1.6em}
+.slug{display:flex;flex-wrap:wrap;gap:.2em 1.4em;align-items:baseline;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;margin:0 0 1.6em}
 .slug b{color:var(--red);font-weight:400}
 .title{font:400 clamp(3rem,9.5vw,9.5rem)/.95 var(--title);letter-spacing:-.025em;margin:0;text-wrap:balance}
 .title em{font-style:italic;font-weight:400}
@@ -239,7 +242,7 @@ html:not(.js) .vo span{opacity:1}
 .svc-still{margin:0;position:sticky;top:14vh;overflow:hidden;aspect-ratio:4/5;background:var(--night);box-shadow:0 40px 90px rgba(0,0,0,.55)}
 .svc-still img{width:100%;height:100%;object-fit:cover;transition:opacity .3s ease}
 .svc-still::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(236,227,208,.25)}
-@media(max-width:860px){.svc-grid{grid-template-columns:1fr}.svc-still{position:relative;top:0;order:-1;aspect-ratio:16/11}.svc-list>li{grid-template-columns:2.4rem minmax(0,1fr)}}
+@media(max-width:860px){.svc-grid{grid-template-columns:1fr;gap:0}.svc-still{position:sticky;top:62px;z-index:2;order:-1;aspect-ratio:16/10;margin-bottom:18px}.svc-list>li{grid-template-columns:2.4rem minmax(0,1fr)}}
 
 .suite{margin-top:clamp(70px,10vw,150px);display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:clamp(26px,5vw,80px);align-items:center}
 .suite ol{list-style:none;margin:1.4em 0 0;padding:0;font:400 clamp(1.8rem,3.6vw,3.4rem)/1.15 var(--title);letter-spacing:-.02em}
@@ -646,6 +649,7 @@ const vo = $('#vo'), voWords = vo.textContent.trim().split(/\s+/).map(w => { con
 vo.textContent = ''; voWords.forEach((s, i) => { if (i) vo.append(' '); vo.append(s); });
 
 /* ---- one frame loop for everything scroll-driven ---- */
+const mode = $('.mode'); let modeY = scrollY;
 const tc = $('#tc'), ph = $('#ph'), pad = n => String(n).padStart(2, '0'), kbs = $$('[data-kb]'), film = $('#film');
 function tick(t) {
   if (lenis) lenis.raf(t);
@@ -655,6 +659,12 @@ function tick(t) {
   ph.style.transform = `scaleX(${clamp(y / max)})`;
   hp = q.has('hp') ? +q.get('hp') : clamp(y / (hero.offsetHeight - vh));
   if (heroOn) paint();
+  if (Math.abs(y - modeY) > 6) { mode.classList.toggle('away', y > modeY && y > 240); modeY = y; }
+  if (!fine) {                                             // touch: the still follows the row at mid-screen
+    let best = null, bd = 1e9;
+    rows.forEach(li => { const b = li.getBoundingClientRect(), dd = Math.abs(b.top + b.height / 2 - vh * .62); if (dd < bd) { bd = dd; best = li; } });
+    if (best && bd < vh * .28 && !best.classList.contains('act')) best._go();
+  }
   if (!reduce) { const fw = film.scrollWidth / 2; if (fw) film.style.transform = `translate3d(${-((y * .35 + t * .025) % fw)}px,0,0)`; }
   const pr = pin.getBoundingClientRect();
   show(q.has('cut') ? +q.get('cut') : clamp(Math.floor(clamp(-pr.top / (pr.height - vh)) * N), 0, N - 1));
@@ -696,7 +706,7 @@ rows.forEach(li => {
     sImg.style.opacity = 0;
     setTimeout(() => { sImg.onload = () => { sImg.style.opacity = 1; }; sImg.src = sCur; sImg.alt = ''; }, 300);
   };
-  li.addEventListener('pointerenter', go); li.addEventListener('focus', go); li.addEventListener('click', go);
+  li._go = go; li.addEventListener('pointerenter', go); li.addEventListener('focus', go); li.addEventListener('click', go);
 });
 
 /* ---- copy email ---- */

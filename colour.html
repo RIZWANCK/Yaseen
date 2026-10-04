@@ -95,7 +95,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 .mode>*{padding:.75em 1.15em;border-radius:99px;transition:color .3s,background .3s}
 .mode span{background:var(--lime);color:var(--ink)}
 .mode a:hover{color:var(--lime)}
-@media(max-width:720px){.mode>*{padding:.6em .9em}}
+.mode{transition:transform .5s var(--ease)}
+@media(max-width:720px){.mode>*{padding:.6em .9em}.mode.away{transform:translateY(190%)}}
+.btn:active,.frame:active,.phone:active,.way:active{scale:.96}
+@media(pointer:coarse){.grain{animation:none}}
 
 /* ---------- cursor ---------- */
 .cur{position:fixed;left:0;top:0;z-index:90;pointer-events:none;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:1.5px solid var(--paper);
@@ -160,11 +163,15 @@ section{position:relative;padding-inline:var(--gut)}
 .hero-bot p{margin:0;font-size:clamp(1rem,1.35vw,1.3rem);line-height:1.45;color:var(--paper)}
 .hero-bot .cta{display:flex;gap:10px;flex-wrap:wrap}
 @media(max-width:860px){
-  .hero{justify-content:center;gap:18px}
-  .name{display:flex;flex-direction:column-reverse;gap:18px}
-  .vf{position:relative;right:auto;bottom:auto;width:min(56vw,240px);margin-inline:auto}
-  .vf-in{transform:rotate(-4deg)}
-  .hero-bot{grid-template-columns:1fr;padding-right:0}
+  .hero{justify-content:center;gap:12px;padding-bottom:64px}
+  .roles{flex-wrap:nowrap;gap:6px}
+  .roles li{padding:.45em .7em;font-size:.64rem;white-space:nowrap}
+  .name{display:flex;flex-direction:column}
+  .vf{position:relative;right:auto;bottom:auto;width:min(42vw,190px);margin:-6vw 6vw 0 auto}
+  .vf-in{transform:rotate(5deg)}
+  .badge{left:-58%;bottom:auto;top:30%;width:66%}
+  .hero-bot{grid-template-columns:1fr;padding-right:0;gap:16px}
+  .hero-bot p{font-size:.98rem}
 }
 
 /* ---------- marquee ---------- */
@@ -182,7 +189,7 @@ section{position:relative;padding-inline:var(--gut)}
 .spot-rows span:nth-child(1){color:var(--magenta)}
 .spot-rows span:nth-child(2){color:transparent;-webkit-text-stroke:2px var(--paper)}
 .spot-rows span:nth-child(3){color:var(--lime)}
-.phone{position:relative;z-index:1;width:min(62vw,330px);aspect-ratio:9/16;border-radius:34px;overflow:hidden;display:block;background:var(--ink-2);
+.phone{position:relative;z-index:1;width:min(54vw,330px);aspect-ratio:9/16;border-radius:34px;overflow:hidden;display:block;background:var(--ink-2);
   box-shadow:0 0 0 8px var(--ink),0 0 0 10px var(--paper),0 60px 120px -30px var(--magenta);transform:rotate(var(--r,-6deg))}
 .phone video{width:100%;height:100%;object-fit:cover}
 .phone::after{content:"";position:absolute;left:50%;top:10px;width:30%;height:16px;border-radius:99px;background:var(--ink);transform:translateX(-50%)}
@@ -222,12 +229,23 @@ section{position:relative;padding-inline:var(--gut)}
 .thud i{flex:1;height:2px;background:rgba(247,239,228,.18);position:relative}
 .thud i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--magenta),var(--orange),var(--lime));transform-origin:left;transform:scaleX(var(--p,0))}
 @media(max-width:899px),(prefers-reduced-motion:reduce){.thud{display:none}}
+.mhud{display:none}
+@media(max-width:899px){
+  .mhud{display:flex;align-items:center;gap:14px;padding:0 var(--gut);color:var(--dim);font-variant-numeric:tabular-nums}
+  .mhud b{color:var(--paper);font-weight:500}
+  .mhud i{flex:1;height:2px;background:rgba(247,239,228,.18);position:relative}
+  .mhud i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--magenta),var(--orange),var(--lime));transform-origin:left;transform:scaleX(var(--p,0));transition:transform .2s}
+  .mhud em{font-style:normal;color:var(--lime);animation:nudge 1.4s ease-in-out infinite}
+  .d-only{display:none}
+}
+@media(min-width:900px){.m-only{display:none}}
+@keyframes nudge{50%{transform:translateX(6px)}}
 .t-end{flex:none;display:grid;place-content:center;gap:18px;padding-inline:clamp(20px,6vw,120px);text-align:center}
 .t-end b{font:400 clamp(2.4rem,6vw,5.5rem)/.9 var(--display);text-transform:uppercase}
 @media(max-width:899px),(prefers-reduced-motion:reduce){
   .sticky{position:static;height:auto;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-block:10px 30px;scrollbar-width:none}
   .sticky::-webkit-scrollbar{display:none}
-  .track{transform:none!important}
+  .track{transform:none!important;align-items:flex-start}
   .clip{scroll-snap-align:center;--h:min(60svh,480px)}
   .clip.wide .frame{height:auto;width:min(82vw,560px)}
   .clip.wide .clip-meta{max-width:min(82vw,560px)}
@@ -287,10 +305,10 @@ html:not(.js) .say span{opacity:1}
 .svc li{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,24rem);gap:16px 40px;align-items:center;padding:clamp(16px,2.4vw,30px) var(--gut);border-top:1px solid rgba(247,239,228,.18);overflow:hidden;isolation:isolate;transition:color .35s}
 .svc li:last-child{border-bottom:1px solid rgba(247,239,228,.18)}
 .svc li::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--c);transform:scaleY(0);transform-origin:bottom;transition:transform .55s var(--ease)}
-.svc li:hover::before{transform:none}
-.svc li:hover{color:var(--ink)}
+.svc li:hover::before,.svc li.act::before{transform:none}
+.svc li:hover,.svc li.act{color:var(--ink)}
 .svc h3{font:400 clamp(2.4rem,8.4vw,8rem)/.92 var(--display);text-transform:uppercase;margin:0;transition:transform .6s var(--ease)}
-.svc li:hover h3{transform:translateX(clamp(8px,2vw,34px)) skewX(-6deg)}
+.svc li:hover h3,.svc li.act h3{transform:translateX(clamp(8px,2vw,34px)) skewX(-6deg)}
 .svc p{margin:0;font-size:1.02rem}
 .peek{position:fixed;left:0;top:0;z-index:40;width:clamp(170px,17vw,260px);aspect-ratio:4/5;border-radius:12px;overflow:hidden;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.6) rotate(-8deg);transition:opacity .3s,transform .5s var(--ease);box-shadow:0 30px 60px -20px #000,0 0 0 4px var(--ink)}
 .peek.on{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(6deg)}
@@ -433,7 +451,7 @@ dialog button{position:absolute;right:0;top:-44px;padding:.7em 1em;border-radius
       <div class="kicker mono rv" style="--c:var(--magenta)">Sequence 01 · Selected cuts</div>
       <h2 class="h2 split"><span class="line"><span>Shot, cut</span></span><span class="line"><span>&amp; <em>animated</em></span></span></h2>
     </div>
-    <p class="rv">Six more pieces across film, kinetic type, events and reels. Scroll to scrub through the track. Tap any clip to watch it with sound.</p>
+    <p class="rv">Six more pieces across film, kinetic type, events and reels. <span class="d-only">Scroll to scrub through the track.</span><span class="m-only">Swipe sideways through the track.</span> Tap any clip to watch it with sound.</p>
   </div>
 
   <div class="pin" id="pin">
@@ -496,6 +514,7 @@ dialog button{position:absolute;right:0;top:-44px;padding:.7em 1em;border-radius
       <div class="thud mono" id="thud" aria-hidden="true">Clip <b id="cn">01</b> / 06 <i></i></div>
     </div>
   </div>
+  <div class="mhud mono" id="mhud" aria-hidden="true">Clip <b id="mcn">01</b> / 06 <i></i><em>Swipe →</em></div>
 </section>
 
 <!-- ================= ABOUT ================= -->
@@ -632,6 +651,8 @@ function draw(now) {
     if (reel.readyState >= 2) {
       const s = Math.max(W / reel.videoWidth, H / reel.videoHeight) * 1.12, vw = reel.videoWidth * s, vh = reel.videoHeight * s;
       ctx.drawImage(reel, (W - vw) / 2 - mouse.nx * W * .05, (H - vh) / 2 - mouse.ny * H * .1, vw, vh);
+      ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = W < 700 ? .5 : .22;   // keep dark frames colourful, more so on phones
+      ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
     }
     ctx.globalCompositeOperation = 'destination-in'; ctx.font = `400 ${fs}px Anton`; ctx.fillStyle = '#000'; ctx.fillText(WORD, x, y);
   }
@@ -657,13 +678,18 @@ const measure = () => bands.forEach(b => b.w = b.el.scrollWidth / 4);
 measure(); addEventListener('resize', measure); if (document.fonts) document.fonts.ready.then(measure);
 
 /* ---- pinned horizontal work track ---- */
-const pin = $('#pin'), track = $('#track');
+const pin = $('#pin'), track = $('#track'), sticky = $('#sticky'), mhud = $('#mhud'), mcn = $('#mcn');
 const desk = matchMedia('(min-width: 900px)'); let maxX = 0, tx = 0;
 function layout() {
   if (desk.matches && !reduce) { maxX = Math.max(0, track.scrollWidth - innerWidth); pin.style.height = innerHeight + maxX + 'px'; }
   else { maxX = 0; pin.style.height = ''; track.style.transform = ''; }
 }
 layout(); addEventListener('resize', layout); addEventListener('load', layout);
+sticky.addEventListener('scroll', () => {                  // phones: the track is swiped, not pinned
+  const m = sticky.scrollWidth - sticky.clientWidth; if (m <= 0) return;
+  const p = clamp(sticky.scrollLeft / m, 0, 1);
+  mhud.style.setProperty('--p', p); mcn.textContent = pad(Math.min(6, Math.floor(p * 6.4) + 1));
+}, { passive: true });
 
 /* ---- moving backgrounds + scroll transitions ---- */
 const fxl = $('#fxl'); let bgClip = 0;
@@ -712,6 +738,7 @@ const sayWords = (() => {
   });
   return { p, out };
 })();
+const mode = $('.mode'), svcRows = $$('.svc li'); let modeY = scrollY;
 const pars = $$('[data-par]'), spot = $('#spot'), rows = $$('.spot-rows span'), thud = $('#thud'), cn = $('#cn');
 let lastY = scrollY, vel = 0;
 function tick(t) {
@@ -724,6 +751,13 @@ function tick(t) {
   if (!reduce) bands.forEach(b => { b.x += b.dir * (1.1 + Math.abs(vel) * .35) * (vel < -1 ? -1 : 1); if (b.w) b.x = ((b.x % b.w) - b.w) % b.w; b.el.style.transform = `translate3d(${b.x}px,0,0) skewX(${clamp(vel * -.35, -14, 14)}deg)`; });
   if (maxX) { const p = clamp(-pin.getBoundingClientRect().top / maxX, 0, 1); tx += (p * maxX - tx) * .12; thud.style.setProperty('--p', p); cn.textContent = pad(Math.min(6, Math.floor(p * 6) + 1)); setClipBg(Math.min(5, Math.floor(p * 6))); track.style.transform = `translate3d(${-tx}px,0,0) skewX(${clamp(vel * -.12, -5, 5)}deg)`; }
   backgrounds(innerHeight);
+  if (Math.abs(y - modeY) > 6) { mode.classList.toggle('away', y > modeY && y > 240); modeY = y; }
+  if (!fine) {                                             // touch: no hover, so scroll does the work
+    if (!reduce && y < innerHeight) vfIn.style.transform = `rotate(${5 - clamp(y / 420, 0, 1) * 10}deg)`;
+    let best = null, bd = 1e9;
+    svcRows.forEach(li => { const b = li.getBoundingClientRect(), dd = Math.abs(b.top + b.height / 2 - innerHeight * .5); if (dd < bd) { bd = dd; best = li; } });
+    svcRows.forEach(li => li.classList.toggle('act', li === best && bd < innerHeight * .3));
+  }
   const sr = spot.getBoundingClientRect();
   if (!reduce && sr.top < innerHeight && sr.bottom > 0) {   // spotlight: type slides, phone straightens
     const sp = clamp((innerHeight - sr.top) / (innerHeight + sr.height), 0, 1);
