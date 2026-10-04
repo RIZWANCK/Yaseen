@@ -679,7 +679,7 @@ function backgrounds(vh) {
   let label = '';
   layers.forEach((L, i) => {
     const t = i ? clamp((vh - L.sec.getBoundingClientRect().top) / (vh * .9), 0, 1) : 1, e = t * t * (3 - 2 * t), st = L.el.style;
-    if (t > .04 && t < .96) label = L.el.dataset.name;
+    if (t > .14 && t < .96) label = L.el.dataset.name;
     if (t === L.t) return; L.t = t;
     st.visibility = t > 0 ? 'visible' : 'hidden';
     if (L.fx === 'iris') st.clipPath = t < 1 ? `circle(${e * 125}% at 50% 55%)` : 'none';
